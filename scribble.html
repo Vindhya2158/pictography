@@ -1,0 +1,75 @@
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    padding: 40px;
+    background: #f5f5f5;
+  }
+  #pinDisplay {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  input, button {
+    font-size: 18px;
+    padding: 10px;
+    margin: 5px;
+  }
+  #hiddenContent {
+    margin-top: 30px;
+    display: none;
+    background: white;
+    padding: 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+   }
+  #errorMsg {
+    color: red;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<h2>Your PIN:</h2>
+<div id="pinDisplay">----</div>
+
+<input type="text" id="pinInput" placeholder="Enter PIN" maxlength="4" />
+<button onclick="checkPin()">Unlock</button>
+
+<p id="errorMsg">Incorrect PIN. Try again.</p>
+
+<div id="hiddenContent">
+  <h3>Unlocked Content</h3>
+  <p>WELCOME </p>
+ <a href="canvas.html"> PLAY </a> 
+</div>
+
+<script>
+  // Generate random 4-digit PIN
+  function generateRandomPin() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  }
+
+  const correctPin = generateRandomPin();
+  document.getElementById('pinDisplay').textContent = correctPin;
+
+  function checkPin() {
+    const userPin = document.getElementById('pinInput').value;
+    const errorMsg = document.getElementById('errorMsg');
+    const hiddenContent = document.getElementById('hiddenContent');
+
+    if(userPin === correctPin) {
+      errorMsg.style.display = 'none';
+      hiddenContent.style.display = 'block';
+    } else {
+      errorMsg.style.display = 'block';
+      hiddenContent.style.display = 'none';
+    }
+  }
+</script>
+</body>
+</html>
