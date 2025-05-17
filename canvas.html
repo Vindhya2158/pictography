@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PICTOGRAPHY 
+
+</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+  body {
+    margin: 0;
+    background: #121212;
+    color: #eee;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    padding: 1rem 2rem;
+    background: linear-gradient(90deg, #0f2027, #203a43, #2c5364);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    font-weight: 600;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  #controls {
+    background: #1f1f1f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 2rem;
+    gap: 1.5rem;
+  }
+
+  #colors {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .color-swatch {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .color-swatch.selected {
+    border-color: #ffffff;
+  }
+
+  #brush-size-label {
+    font-weight: 600;
+    user-select: none;
+  }
+  #brush-size {
+    width: 100px;
+  }
+
+  button#clear-btn {
+    background: #ff5555;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  button#clear-btn:hover {
+    background: #ff2222;
+  }
+
+  #canvas-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #222;
+    padding: 1rem;
+  }
+
+  canvas {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 30px #00f0ff55;
+    max-width: 100%;
+    max-height: 100%;
+    touch-action: none;
+  }
+
+  @media (max-width: 600px) {
+    #controls {
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+  }
+  
+  #pinDisplay {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  input, button {
+    font-size: 18px;
+    padding: 10px;
+    margin: 5px;
+  }
+  #hiddenContent {
+    margin-top: 30px;
+    display: none;
+    background: white;
+    padding: 20px;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+   }
+  #errorMsg {
+    color: red;
+    display: none;
+  }
+</style>
+</style>
+</head>
+<body>
+<header>Scribble Game</header>
+<div id="controls">
+  <div id="colors" aria-label="Color palette" role="group">
+    <div class="color-swatch selected" style="background:#000000" data-color="#000000" tabindex="0" aria-label="Black"></div>
+    <div class="color-swatch" style="background:#e63946" data-color="#e63946" tabindex="0" aria-label="Red"></div>
+    <div class="color-swatch" style="background:#f1faee" data-color="#f1faee" tabindex="0" aria-label="White"></div>
+    <div class="color-swatch" style="background:#a8dadc" data-color="#a8dadc" tabindex="0" aria-label="Light Blue"></div>
+    <div class="color-swatch" style="background:#457b9d" data-color="#457b9d" tabindex="0" aria-label="Blue"></div>
+    <div class="color-swatch" style="background:#ffb703" data-color="#ffb703" tabindex="0" aria-label="Yellow"></div>
+    <div class="color-swatch" style="background:#fb8500" data-color="#fb8500" tabindex="0" aria-label="Orange"></div>
+  </div>
+  <label id="brush-size-label" for="brush-size">Brush Size: </label>
+  <input type="range" id="brush-size" min="1" max="50" value="5" aria-valuemin="1" aria-valuemax="50" aria-valuenow="5" aria-label="Brush size slider" />
+  <button id="clear-btn" aria-label="Clear canvas">Clear</button>
+</div>
+
+<div id="canvas-container">
+  <canvas id="draw-canvas" width="800" height="600" aria-label="Drawing canvas"></canvas>
+</div>
+
+
+
+<script>
+ 
+  (function() {
+    const canvas = document.getElementById('draw-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Initialize drawing state
+    let drawing = false;
+    let currentColor = '#000000';
+    let brushSize = 5;
+    let lastX = 0;
+    let lastY = 0;
+
+    // Adjust canvas size to fit container on window resize
+    function resizeCanvas() {
+      const container = document.getElementById('canvas-container');
+      const ratio = canvas.width / canvas.height;
+      let width = container.clientWidth - 20;
+      let height = container.clientHeight - 20;
+      if (width / height > ratio) {
+        width = height * ratio;
+      } else {
+        height = width / ratio;
+      }
+      canvas.style.width = width + 'px';
+      canvas.style.height = height + 'px';
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Start drawing
+    function startDrawing(x, y) {
+      drawing = true;
+      lastX = x;
+      lastY = y;
+    }
+
+    // Draw line segment
+    function drawLine(x, y) {
+      if (!drawing) return;
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = brushSize;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      lastX = x;
+      lastY = y;
+    }
+
+    // Stop drawing
+    function stopDrawing() {
+      drawing = false;
+    }
+
+    // Event handlers for mouse
+    canvas.addEventListener('mousedown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      startDrawing(e.clientX - rect.left, e.clientY - rect.top);
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      drawLine(e.clientX - rect.left, e.clientY - rect.top);
+    });
+    window.addEventListener('mouseup', stopDrawing);
+
+    // Event handlers for touch
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      startDrawing(touch.clientX - rect.left, touch.clientY - rect.top);
+    }, { passive: false });
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      drawLine(touch.clientX - rect.left, touch.clientY - rect.top);
+    }, { passive: false });
+    window.addEventListener('touchend', (e) => { e.preventDefault(); stopDrawing(); }, { passive: false });
+
+    // Color selection
+    const colors = document.querySelectorAll('.color-swatch');
+    colors.forEach(color => {
+      color.addEventListener('click', () => {
+        colors.forEach(c => c.classList.remove('selected'));
+        color.classList.add('selected');
+        currentColor = color.getAttribute('data-color');
+      });
+      color.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          color.click();
+        }
+      });
+    });
+
+    // Brush size slider
+    const brushSizeInput = document.getElementById('brush-size');
+    brushSizeInput.addEventListener('input', () => {
+      brushSize = brushSizeInput.value;
+      brushSizeInput.setAttribute('aria-valuenow', brushSize);
+    });
+
+    // Clear button
+    const clearBtn = document.getElementById('clear-btn');
+    clearBtn.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    // Initialize canvas background to white
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  })();
+</script>
+</body>
+</html>
